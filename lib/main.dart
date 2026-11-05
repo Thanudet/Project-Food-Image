@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 // ───────────────────────── Theme Colors ─────────────────────────
 const kGreen = Color(0xFF20C96A);
@@ -19,7 +20,7 @@ class AdminAuth extends ChangeNotifier {
   bool get isAdmin => _isAdmin;
 
   bool login(String email, String password) {
-    // กำหนดให้เป็น true เสมอ ไม่ว่าจะกรอกอะไรมาก็ตาม
+    // กำหนดให้เป็น true เสมอ ไม่ว่าจะกรอกอะไรมาก็ตาม (สำหรับการจำลอง)
     _isAdmin = true;
     notifyListeners();
     return true;
@@ -31,90 +32,35 @@ class AdminAuth extends ChangeNotifier {
   }
 }
 
-// ───────────────────────── Editable Content State ─────────────────────────
+// ───────────────────────── App Data State ─────────────────────────
 class AppContent extends ChangeNotifier {
-  final Map<String, String> _data = {
-    // Intro
-    'intro.title': 'Nutrition AI',
-    'intro.subtitle': 'แอปพลิเคชันวิเคราะห์โภชนาการอาหาร\nจากรูปภาพด้วยปัญญาประดิษฐ์',
-    'intro.login': 'Log In',
-    'intro.create': 'Create an account',
-    'intro.admin': 'Login as Admin',
-    // Register
-    'register.title': 'Sign Up',
-    'register.continue': 'Continue',
-    // Health
-    'health.title': 'Health Data',
-    'health.continue': 'Continue',
-    // Goal
-    'goal.title': 'Your Goals',
-    'goal.calorie_label': 'Daily Calorie Target',
-    'goal.activity_label': 'Activity Level',
-    'goal.save': 'Save & Finish',
-    // Dashboard
-    'dash.today': 'Today',
-    'dash.percent': '79%',
-    'dash.of_goal': 'of 1900 kcal',
-    'dash.total_label': 'Total Calories',
-    'dash.total_value': '1280 kcal',
-    'dash.track_msg': 'On track for your daily goal',
-    'dash.history_title': 'ประวัติการรับประทานอาหาร',
-    'dash.meal_name': 'ข้าวกระเพราหมูสับไข่ดาว',
-    'dash.meal_cal': 'พลังงาน 540 Kcal',
-    // Capture
-    'capture.gallery': 'Gallery',
-    'capture.flash': 'Flash',
-    // Analysis
-    'analysis.title': 'Analysis Result',
-    'analysis.food_name': 'ข้าวกระเพราหมูสับไข่ดาว',
-    'analysis.cal_label': 'พลังงานรวม (Total Calories)',
-    'analysis.cal_value': '540 kcal',
-    'analysis.save_btn': 'Save to Diary',
-    // Save Meal
-    'save.title': 'Save Meal',
-    'save.time_label': 'Time',
-    'save.confirm': 'Confirm',
-    // Profile
-    'profile.title': 'Profile',
-    'profile.account_title': 'ข้อมูลบัญชี',
-    'profile.full_name': 'แคทเธอรีน ภูชาง',
-    'profile.email': 'Doradaymon@gmail.com',
-    'profile.birthdate': '12 ธันวาคม 2001',
-    'profile.change_pw': 'เปลี่ยนรหัสผ่าน',
-    'profile.personal_title': 'ข้อมูลส่วนตัว',
-    'profile.weight': '--',
-    'profile.height': '--',
-    'profile.age': '--',
-    'profile.goal': '--',
-    'profile.activity': '--',
-    'profile.edit': 'แก้ไข',
-    'profile.logout': 'Logout',
-    // Account / Settings
-    'account.title': 'Settings',
-    'account.notif': 'Notifications',
-    'account.theme': 'Theme',
-    // Admin Users
-    'admin_users.admin_label': 'Admin',
-    'admin_users.edit': 'แก้ไข',
-    'admin_users.delete': 'ลบ',
-    // Admin Foods
-    'admin_foods.title': 'Manage Foods',
-    'admin_foods.add': 'Add New Food',
-    'admin_foods.placeholder': 'Food Database Items...',
-    // User data
-    'user.6701.name': 'แคทเธอรีน ภูชาง',
-    'user.6701.email': 'Doradaymon@gmail.com',
-    'user.6702.name': 'ปิติโชค โดราเอม่อน',
-    'user.6702.email': 'user2@gmail.com',
-    'user.6703.name': 'มะม่วง ใจดี',
-    'user.6703.email': 'user3@gmail.com',
+  // จำลองข้อมูลผู้ใช้
+  final Map<String, Map<String, String>> users = {
+    '6701': {'name': 'แคทเธอรีน ภูชาง', 'email': 'Doradaymon@gmail.com', 'role': 'User'},
+    '6702': {'name': 'ปิติโชค โดราเอม่อน', 'email': 'user2@gmail.com', 'role': 'User'},
+    '6703': {'name': 'มะม่วง ใจดี', 'email': 'user3@gmail.com', 'role': 'User'},
   };
 
-  String get(String key) => _data[key] ?? key;
+  // จำลองข้อมูลอาหาร
+  final List<Map<String, String>> foods = [];
 
-  void set(String key, String value) {
-    _data[key] = value;
+  // วันเกิดที่ผู้ใช้เลือกจากหน้า Date of Birth
+  DateTime? birthDate;
+
+  // ข้อมูลอาหารหลักที่ Admin เพิ่มเท่านั้น (ไม่รวมข้อมูลที่ผู้ใช้ทั่วไปบันทึก)
+  List<Map<String, String>> get adminFoods =>
+      foods.where((f) => f['source'] == 'admin').toList();
+
+  void addFood(Map<String, String> foodData) {
+    foods.add(foodData);
     notifyListeners();
+  }
+
+  void updateUser(String id, Map<String, String> data) {
+    if (users.containsKey(id)) {
+       users[id]!.addAll(data);
+       notifyListeners();
+    }
   }
 }
 
@@ -148,6 +94,7 @@ class _NutritionAppState extends State<NutritionApp> {
           routes: {
             '/': (_) => const IntroScreen(),
             '/register': (_) => const RegisterScreen(),
+            '/dob': (_) => const DobScreen(),
             '/health': (_) => const HealthScreen(),
             '/goal': (_) => const GoalScreen(),
             '/home': (_) => const DashboardScreen(),
@@ -155,10 +102,14 @@ class _NutritionAppState extends State<NutritionApp> {
             '/analysis': (_) => const AnalysisScreen(),
             '/save': (_) => const SaveMealScreen(),
             '/profile': (_) => const ProfileScreen(),
-            '/change_password': (_) => const ChangePasswordScreen(), // เพิ่มเส้นทางใหม่
+            '/change_password': (_) => const ChangePasswordScreen(),
             '/account': (_) => const AccountScreen(),
+            // เส้นทางสำหรับแอดมิน
+            '/admin/home': (_) => const AdminHomeScreen(),
             '/admin/users': (_) => const AdminUsersScreen(),
+            '/admin/users/edit': (_) => const AdminEditUserScreen(),
             '/admin/foods': (_) => const AdminFoodsScreen(),
+            '/admin/foods/add': (_) => const AdminAddFoodScreen(),
           },
         ),
       ),
@@ -183,7 +134,6 @@ class _Providers extends InheritedWidget {
 extension ProviderAccess on BuildContext {
   AdminAuth get auth => _Providers.of(this).auth;
   AppContent get content => _Providers.of(this).content;
-  String t(String key) => _Providers.of(this).content.get(key);
   bool get isAdmin => _Providers.of(this).auth.isAdmin;
 }
 
@@ -205,11 +155,8 @@ class CleanAppBar extends StatelessWidget implements PreferredSizeWidget {
               padding: const EdgeInsets.only(left: 16, top: 8, bottom: 8),
               child: InkWell(
                 onTap: () {
-                  // แก้ไขปุ่มย้อนกลับให้ตรวจสอบก่อนว่า pop ได้หรือไม่
                   if (Navigator.canPop(context)) {
                     Navigator.pop(context);
-                  } else {
-                    Navigator.pushReplacementNamed(context, '/home');
                   }
                 },
                 borderRadius: BorderRadius.circular(12),
@@ -256,9 +203,10 @@ class PrimaryButton extends StatelessWidget {
 class CleanTextField extends StatelessWidget {
   final String hint;
   final IconData? icon;
+  final IconData? suffixIcon;
   final bool obscure;
   final TextEditingController? controller;
-  const CleanTextField({super.key, required this.hint, this.icon, this.obscure = false, this.controller});
+  const CleanTextField({super.key, required this.hint, this.icon, this.suffixIcon, this.obscure = false, this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -274,8 +222,9 @@ class CleanTextField extends StatelessWidget {
         obscureText: obscure,
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: const TextStyle(color: kMuted),
+          hintStyle: const TextStyle(color: kMuted, fontSize: 14),
           prefixIcon: icon != null ? Icon(icon, color: kMuted) : null,
+          suffixIcon: suffixIcon != null ? Icon(suffixIcon, color: kMuted, size: 18) : null,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         ),
@@ -320,58 +269,7 @@ class BaseNavLayout extends StatelessWidget {
   }
 }
 
-// ───────────────────────── Admin Edit Helpers ─────────────────────────
-
-/// Inline-editable text: shows the content string normally; when admin taps
-/// the pencil icon, a dialog lets them edit the value in real time.
-class EditableLabel extends StatelessWidget {
-  final String contentKey;
-  final TextStyle? style;
-  final TextAlign? textAlign;
-  const EditableLabel(this.contentKey, {super.key, this.style, this.textAlign});
-
-  @override
-  Widget build(BuildContext context) {
-    final text = context.t(contentKey);
-    if (!context.isAdmin) {
-      return Text(text, style: style, textAlign: textAlign);
-    }
-    return GestureDetector(
-      onTap: () => _showEditDialog(context, contentKey, text),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Flexible(child: Text(text, style: style, textAlign: textAlign)),
-          const SizedBox(width: 4),
-          const Icon(Icons.edit, size: 14, color: kGreen),
-        ],
-      ),
-    );
-  }
-}
-
-void _showEditDialog(BuildContext context, String key, String current) {
-  final ctrl = TextEditingController(text: current);
-  final content = context.content;
-  ctrl.addListener(() => content.set(key, ctrl.text));
-  showDialog(
-    context: context,
-    builder: (_) => AlertDialog(
-      title: Text('Edit "$key"', style: const TextStyle(fontSize: 14)),
-      content: TextField(
-        controller: ctrl,
-        autofocus: true,
-        maxLines: null,
-        decoration: const InputDecoration(border: OutlineInputBorder()),
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Done')),
-      ],
-    ),
-  );
-}
-
-/// Shows the admin login dialog. Returns true if login succeeded.
+// ฟังก์ชัน Login สำหรับแอดมิน
 Future<bool> showAdminLoginDialog(BuildContext context) async {
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
@@ -422,14 +320,6 @@ Future<bool> showAdminLoginDialog(BuildContext context) async {
   return result ?? false;
 }
 
-/// Small conditional widget for admin-only actions
-class AdminOnly extends StatelessWidget {
-  final Widget child;
-  const AdminOnly({super.key, required this.child});
-  @override
-  Widget build(BuildContext context) => context.isAdmin ? child : const SizedBox.shrink();
-}
-
 // ───────────────────────── 1. Login / Intro ─────────────────────────
 class IntroScreen extends StatelessWidget {
   const IntroScreen({super.key});
@@ -444,26 +334,27 @@ class IntroScreen extends StatelessWidget {
                 const Spacer(),
                 const CircleAvatar(radius: 50, backgroundColor: kGreenBg, child: Icon(Icons.restaurant, size: 50, color: kGreen)),
                 const SizedBox(height: 24),
-                EditableLabel('intro.title', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                const Text('Nutrition AI', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                EditableLabel('intro.subtitle', style: const TextStyle(color: kMuted), textAlign: TextAlign.center),
+                const Text('แอปพลิเคชันวิเคราะห์โภชนาการอาหาร\nจากรูปภาพด้วยปัญญาประดิษฐ์', style: TextStyle(color: kMuted), textAlign: TextAlign.center),
                 const Spacer(),
                 const CleanTextField(hint: 'Email', icon: Icons.email_outlined),
                 const CleanTextField(hint: 'Password', icon: Icons.lock_outline, obscure: true),
                 const SizedBox(height: 8),
-                PrimaryButton(context.t('intro.login'), () => Navigator.pushReplacementNamed(context, '/home')),
+                PrimaryButton('Log In', () => Navigator.pushReplacementNamed(context, '/home')),
                 TextButton(
                   onPressed: () => Navigator.pushNamed(context, '/register'),
-                  child: Text(context.t('intro.create'), style: const TextStyle(color: kMuted)),
+                  child: const Text('Create an account', style: TextStyle(color: kMuted)),
                 ),
                 TextButton(
                   onPressed: () async {
                     final ok = await showAdminLoginDialog(context);
                     if (ok && context.mounted) {
-                      Navigator.pushNamed(context, '/admin/users');
+                      // วิ่งไปหน้า Admin Dashboard (มีเมนูให้เลือก)
+                      Navigator.pushReplacementNamed(context, '/admin/home');
                     }
                   },
-                  child: Text(context.t('intro.admin'), style: const TextStyle(color: kGreen)),
+                  child: const Text('Login as Admin', style: TextStyle(color: kGreen)),
                 ),
               ],
             ),
@@ -477,7 +368,7 @@ class RegisterScreen extends StatelessWidget {
   const RegisterScreen({super.key});
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: CleanAppBar(title: context.t('register.title')),
+        appBar: const CleanAppBar(title: 'Sign Up'),
         body: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -486,7 +377,7 @@ class RegisterScreen extends StatelessWidget {
               const CleanTextField(hint: 'Email'),
               const CleanTextField(hint: 'Password', obscure: true),
               const Spacer(),
-              PrimaryButton(context.t('register.continue'), () => Navigator.pushNamed(context, '/health')),
+              PrimaryButton('Continue', () => Navigator.pushNamed(context, '/dob')),
             ],
           ),
         ),
@@ -498,7 +389,7 @@ class HealthScreen extends StatelessWidget {
   const HealthScreen({super.key});
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: CleanAppBar(title: context.t('health.title')),
+        appBar: const CleanAppBar(title: 'Health Data'),
         body: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -512,7 +403,7 @@ class HealthScreen extends StatelessWidget {
                 ],
               ),
               const Spacer(),
-              PrimaryButton(context.t('health.continue'), () => Navigator.pushNamed(context, '/goal')),
+              PrimaryButton('Continue', () => Navigator.pushNamed(context, '/goal')),
             ],
           ),
         ),
@@ -524,21 +415,21 @@ class GoalScreen extends StatelessWidget {
   const GoalScreen({super.key});
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: CleanAppBar(title: context.t('goal.title')),
+        appBar: const CleanAppBar(title: 'Your Goals'),
         body: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              EditableLabel('goal.calorie_label', style: const TextStyle(fontWeight: FontWeight.bold)),
+              const Text('Daily Calorie Target', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               const CleanTextField(hint: 'e.g. 1900 kcal'),
               const SizedBox(height: 24),
-              EditableLabel('goal.activity_label', style: const TextStyle(fontWeight: FontWeight.bold)),
+              const Text('Activity Level', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               const CleanTextField(hint: 'Light / Active / Very Active'),
               const Spacer(),
-              PrimaryButton(context.t('goal.save'), () => Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false)),
+              PrimaryButton('Save & Finish', () => Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false)),
             ],
           ),
         ),
@@ -563,75 +454,87 @@ class DashboardScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(20), border: Border.all(color: kBorder)),
                 child: Row(
-                  children: [
-                    const Icon(Icons.calendar_today, size: 16, color: kInk),
-                    const SizedBox(width: 8),
-                    EditableLabel('dash.today', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    const Icon(Icons.keyboard_arrow_down, size: 18),
+                  children: const [
+                    Icon(Icons.calendar_today, size: 16, color: kInk),
+                    SizedBox(width: 8),
+                    Text('Today', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Icon(Icons.keyboard_arrow_down, size: 18),
                   ],
                 ),
               ),
-              Row(
-                children: [
-                  AdminOnly(child: const Icon(Icons.edit_note, color: kMuted)),
-                  const SizedBox(width: 16),
-                  const Icon(Icons.more_horiz, color: kMuted),
-                ],
-              )
+              const Icon(Icons.more_horiz, color: kMuted),
             ],
           ),
           const SizedBox(height: 24),
 
-          // Total Calories
           Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), border: Border.all(color: kBorder)),
-            child: Row(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: kBorder, width: 1.5),
+              boxShadow: [BoxShadow(color: kGreen.withValues(alpha: 0.10), blurRadius: 24, offset: const Offset(0, 8))],
+            ),
+            child: Column(
               children: [
                 SizedBox(
-                  width: 100,
-                  height: 100,
+                  width: 190,
+                  height: 190,
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-                      CircularProgressIndicator(value: 0.79, strokeWidth: 8, backgroundColor: Colors.grey[100], color: kGreen),
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          EditableLabel('dash.percent', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                          EditableLabel('dash.of_goal', style: const TextStyle(fontSize: 9, color: kMuted)),
-                        ],
-                      )
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 24),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      EditableLabel('dash.total_label', style: const TextStyle(color: kMuted, fontSize: 13)),
-                      const SizedBox(height: 4),
-                      EditableLabel('dash.total_value', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Icon(Icons.circle, size: 8, color: kGreen),
-                          const SizedBox(width: 6),
-                          Flexible(child: EditableLabel('dash.track_msg', style: const TextStyle(fontSize: 11, color: kMuted))),
-                        ],
+                      SizedBox(
+                        width: 190,
+                        height: 190,
+                        child: CircularProgressIndicator(
+                          value: 0.79,
+                          strokeWidth: 16,
+                          strokeCap: StrokeCap.round,
+                          backgroundColor: kGreenBg,
+                          color: kGreen,
+                        ),
+                      ),
+                      Container(
+                        width: 140,
+                        height: 140,
+                        decoration: const BoxDecoration(shape: BoxShape.circle, color: kGreenBg),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Text('79%', style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold, color: kInk)),
+                            SizedBox(height: 2),
+                            Text('of 1900 kcal', style: TextStyle(fontSize: 13, color: kMuted)),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                )
+                ),
+                const SizedBox(height: 24),
+                const Text('Total Calories', style: TextStyle(color: kMuted, fontSize: 14)),
+                const SizedBox(height: 4),
+                const Text('1280 kcal', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: kInk)),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(color: kGreenBg, borderRadius: BorderRadius.circular(20)),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(Icons.circle, size: 8, color: kGreen),
+                      SizedBox(width: 6),
+                      Flexible(child: Text('On track for your daily goal', style: TextStyle(fontSize: 12, color: kGreen, fontWeight: FontWeight.w600))),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
           const SizedBox(height: 24),
-          EditableLabel('dash.history_title', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const Text('ประวัติการรับประทานอาหาร', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: 16),
 
-          // Meal Item
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), border: Border.all(color: kBorder)),
@@ -642,18 +545,13 @@ class DashboardScreen extends StatelessWidget {
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      EditableLabel('dash.meal_name', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                      const SizedBox(height: 4),
-                      EditableLabel('dash.meal_cal', style: const TextStyle(fontSize: 12, color: kMuted)),
+                    children: const [
+                      Text('ข้าวกระเพราหมูสับไข่ดาว', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      SizedBox(height: 4),
+                      Text('พลังงาน 540 Kcal', style: TextStyle(fontSize: 12, color: kMuted)),
                     ],
                   ),
                 ),
-                CircleAvatar(
-                  backgroundColor: kGreen,
-                  radius: 22,
-                  child: IconButton(icon: const Icon(Icons.add, color: Colors.white), onPressed: () {}),
-                )
               ],
             ),
           ),
@@ -688,7 +586,7 @@ class CaptureScreen extends StatelessWidget {
                   children: [
                     CircleAvatar(radius: 28, backgroundColor: Colors.grey[100], child: const Icon(Icons.photo, color: kInk)),
                     const SizedBox(height: 8),
-                    EditableLabel('capture.gallery', style: const TextStyle(fontSize: 12)),
+                    const Text('Gallery', style: TextStyle(fontSize: 12)),
                   ],
                 ),
                 InkWell(
@@ -699,7 +597,7 @@ class CaptureScreen extends StatelessWidget {
                   children: [
                     CircleAvatar(radius: 28, backgroundColor: Colors.grey[100], child: const Icon(Icons.flash_off, color: kInk)),
                     const SizedBox(height: 8),
-                    EditableLabel('capture.flash', style: const TextStyle(fontSize: 12)),
+                    const Text('Flash', style: TextStyle(fontSize: 12)),
                   ],
                 ),
               ],
@@ -717,13 +615,13 @@ class AnalysisScreen extends StatelessWidget {
   const AnalysisScreen({super.key});
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: CleanAppBar(title: context.t('analysis.title')),
+        appBar: const CleanAppBar(title: 'Analysis Result'),
         body: ListView(
           padding: const EdgeInsets.all(24),
           children: [
             Container(height: 200, decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(20))),
             const SizedBox(height: 24),
-            EditableLabel('analysis.food_name', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            const Text('ข้าวกระเพราหมูสับไข่ดาว', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(20),
@@ -734,14 +632,14 @@ class AnalysisScreen extends StatelessWidget {
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(child: EditableLabel('analysis.cal_label', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: kInk))),
-                  EditableLabel('analysis.cal_value', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: kGreen)),
+                children: const [
+                  Flexible(child: Text('พลังงานรวม (Total Calories)', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: kInk))),
+                  Text('540 kcal', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: kGreen)),
                 ],
               ),
             ),
             const SizedBox(height: 40),
-            PrimaryButton(context.t('analysis.save_btn'), () => Navigator.pushNamed(context, '/save')),
+            PrimaryButton('Save to Diary', () => Navigator.pushNamed(context, '/save')),
           ],
         ),
       );
@@ -752,7 +650,7 @@ class SaveMealScreen extends StatelessWidget {
   const SaveMealScreen({super.key});
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: CleanAppBar(title: context.t('save.title')),
+        appBar: const CleanAppBar(title: 'Save Meal'),
         body: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -760,11 +658,11 @@ class SaveMealScreen extends StatelessWidget {
             children: [
               const CleanTextField(hint: 'Meal Name (e.g. Breakfast, Lunch)'),
               const SizedBox(height: 16),
-              EditableLabel('save.time_label', style: const TextStyle(fontWeight: FontWeight.bold)),
+              const Text('Time', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               const CleanTextField(hint: '09:00 AM', icon: Icons.access_time),
               const Spacer(),
-              PrimaryButton(context.t('save.confirm'), () => Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false)),
+              PrimaryButton('Confirm', () => Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false)),
             ],
           ),
         ),
@@ -783,38 +681,20 @@ class ProfileScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              InkWell(
-                onTap: () {
-                  // แก้ไขปุ่มย้อนกลับให้ตรวจสอบก่อนว่า pop ได้หรือไม่
-                  if (Navigator.canPop(context)) {
-                    Navigator.pop(context);
-                  } else {
-                    Navigator.pushReplacementNamed(context, '/home');
-                  }
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12)),
-                  child: const Icon(Icons.arrow_back_ios_new, size: 16),
-                ),
-              ),
-              Expanded(child: Center(child: EditableLabel('profile.title', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)))),
-              const SizedBox(width: 32),
+              Expanded(child: Center(child: const Text('Profile', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)))),
             ],
           ),
           const SizedBox(height: 32),
           const Center(child: CircleAvatar(radius: 40, backgroundColor: Colors.black, child: Icon(Icons.person, color: Colors.white, size: 40))),
           const SizedBox(height: 32),
 
-          // Account Info Card
-          _InfoCard(title: 'profile.account_title', items: const {
-            'FULL-NAME': 'profile.full_name',
-            'Email': 'profile.email',
-            'Birthdate': 'profile.birthdate',
+          _InfoCard(title: 'ข้อมูลบัญชี', items: const {
+            'FULL-NAME': 'แคทเธอรีน ภูชาง',
+            'Email': 'Doradaymon@gmail.com',
+            'Birthdate': '12 ธันวาคม 2001',
           }),
           const SizedBox(height: 16),
 
-          // Change Password - เปลี่ยนให้เด้งไปหน้าจอใหม่
           InkWell(
             onTap: () {
                Navigator.pushNamed(context, '/change_password');
@@ -828,26 +708,24 @@ class ProfileScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16), 
                 border: Border.all(color: kBorder)
               ),
-              child: Center(
-                child: EditableLabel('profile.change_pw', style: const TextStyle(fontWeight: FontWeight.bold))
+              child: const Center(
+                child: Text('เปลี่ยนรหัสผ่าน', style: TextStyle(fontWeight: FontWeight.bold))
               ),
             ),
           ),
           const SizedBox(height: 16),
 
-          // Personal Info Card
-          _InfoCard(title: 'profile.personal_title', items: const {
-            'น้ำหนัก (Weight)': 'profile.weight',
-            'ส่วนสูง (Height)': 'profile.height',
-            'อายุ (Age)': 'profile.age',
-            'เป้าหมาย (Goal)': 'profile.goal',
-            'ระดับกิจกรรม (Activity)': 'profile.activity',
+          _InfoCard(title: 'ข้อมูลส่วนตัว', items: const {
+            'น้ำหนัก (Weight)': '--',
+            'ส่วนสูง (Height)': '--',
+            'อายุ (Age)': '--',
+            'เป้าหมาย (Goal)': '--',
+            'ระดับกิจกรรม (Activity)': '--',
           }),
           const SizedBox(height: 32),
 
-          // ปุ่ม Log Out แบบมี Dialog แจ้งเตือน
           PrimaryButton(
-            context.t('profile.logout'), 
+            'Logout', 
             () {
               showDialog(
                 context: context,
@@ -882,7 +760,7 @@ class ProfileScreen extends StatelessWidget {
 
 class _InfoCard extends StatelessWidget {
   final String title;
-  final Map<String, String> items; // label → content key
+  final Map<String, String> items;
   const _InfoCard({required this.title, required this.items});
 
   @override
@@ -893,7 +771,7 @@ class _InfoCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          EditableLabel(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: 16),
           ...items.entries.map((e) => Padding(
                 padding: const EdgeInsets.only(bottom: 12),
@@ -901,26 +779,16 @@ class _InfoCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(e.key, style: const TextStyle(color: kMuted, fontSize: 13)),
-                    Flexible(child: EditableLabel(e.value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
+                    Flexible(child: Text(e.value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
                   ],
                 ),
               )),
-          Align(
-            alignment: Alignment.centerRight,
-            child: AdminOnly(
-              child: InkWell(
-                onTap: () {},
-                child: Text(context.t('profile.edit'), style: const TextStyle(color: kGreen, fontWeight: FontWeight.bold, fontSize: 13)),
-              ),
-            ),
-          ),
         ],
       ),
     );
   }
 }
 
-// ───────────────────────── หน้าต่างตั้งค่ารหัสผ่านใหม่ (เพิ่มใหม่) ─────────────────────────
 class ChangePasswordScreen extends StatelessWidget {
   const ChangePasswordScreen({super.key});
 
@@ -947,7 +815,6 @@ class ChangePasswordScreen extends StatelessWidget {
             
             const Spacer(),
             PrimaryButton('บันทึกรหัสผ่านใหม่', () {
-              // แจ้งเตือนและกลับไปยังหน้าโปรไฟล์
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('บันทึกรหัสผ่านใหม่สำเร็จแล้ว!'), backgroundColor: kGreen),
               );
@@ -960,55 +827,136 @@ class ChangePasswordScreen extends StatelessWidget {
   }
 }
 
-// ───────────────────────── 10. Account (Settings) ─────────────────────────
 class AccountScreen extends StatelessWidget {
   const AccountScreen({super.key});
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: CleanAppBar(title: context.t('account.title')),
+        appBar: const CleanAppBar(title: 'Settings'),
         body: ListView(
           padding: const EdgeInsets.all(24),
           children: [
             ListTile(
               contentPadding: EdgeInsets.zero,
-              title: EditableLabel('account.notif'),
+              title: const Text('Notifications'),
               trailing: Switch(value: true, onChanged: (v) {}, activeTrackColor: kGreen),
             ),
             const Divider(color: kBorder),
-            ListTile(
+            const ListTile(
               contentPadding: EdgeInsets.zero,
-              title: EditableLabel('account.theme'),
-              trailing: const Icon(Icons.chevron_right, color: kMuted),
+              title: Text('Theme'),
+              trailing: Icon(Icons.chevron_right, color: kMuted),
             ),
           ],
         ),
       );
 }
 
-// ───────────────────────── 11. Admin Users ─────────────────────────
-class AdminUsersScreen extends StatelessWidget {
-  const AdminUsersScreen({super.key});
 
-  static const _users = [
-    {'id': '6701'},
-    {'id': '6702'},
-    {'id': '6703'},
-  ];
+// ───────────────────────── ADMIN SCREENS ─────────────────────────
+
+// หน้าหลักสำหรับ Admin เพื่อเลือกว่าจะไปจัดการส่วนไหน
+class AdminHomeScreen extends StatelessWidget {
+  const AdminHomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CleanAppBar(title: '', showBack: true),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        title: const Text('Admin Dashboard', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: kInk)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: kRed),
+            onPressed: () {
+              context.auth.logout();
+              Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
+            },
+          )
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            _AdminMenuCard(
+              title: 'จัดการบัญชีผู้ใช้',
+              icon: Icons.people,
+              onTap: () => Navigator.pushNamed(context, '/admin/users'),
+            ),
+            const SizedBox(height: 16),
+            _AdminMenuCard(
+              title: 'จัดการโภชนาการอาหาร',
+              icon: Icons.fastfood,
+              onTap: () => Navigator.pushNamed(context, '/admin/foods'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AdminMenuCard extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _AdminMenuCard({required this.title, required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: kBorder, width: 2),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: kGreenBg, borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon, color: kGreen),
+            ),
+            const SizedBox(width: 16),
+            Expanded(child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+            const Icon(Icons.chevron_right, color: kMuted),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+// ───────────────────────── 11. Admin Users ─────────────────────────
+class AdminUsersScreen extends StatelessWidget {
+  const AdminUsersScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final users = context.content.users;
+    
+    return Scaffold(
+      appBar: const CleanAppBar(title: 'จัดการบัญชีผู้ใช้', showBack: true),
       body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         children: [
+          // รูปโปรไฟล์และคำว่า Admin (ไม่มีไอคอนดินสอ)
           const Center(child: CircleAvatar(radius: 40, backgroundColor: Colors.black, child: Icon(Icons.person, color: Colors.white, size: 40))),
           const SizedBox(height: 16),
-          Center(child: EditableLabel('admin_users.admin_label', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold))),
+          const Center(child: Text('Admin', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold))),
           const SizedBox(height: 24),
+          
           const CleanTextField(hint: 'search ID', icon: Icons.search),
           const SizedBox(height: 8),
-          for (final u in _users) _UserCard(id: u['id']!),
+          ...users.entries.map((entry) => _UserCard(id: entry.key, userData: entry.value)),
         ],
       ),
     );
@@ -1017,7 +965,8 @@ class AdminUsersScreen extends StatelessWidget {
 
 class _UserCard extends StatelessWidget {
   final String id;
-  const _UserCard({required this.id});
+  final Map<String, String> userData;
+  const _UserCard({required this.id, required this.userData});
 
   @override
   Widget build(BuildContext context) {
@@ -1031,11 +980,15 @@ class _UserCard extends StatelessWidget {
             children: [
               Text('UserID : $id', style: const TextStyle(fontWeight: FontWeight.bold, color: kMuted)),
               const Spacer(),
-              AdminOnly(child: Row(children: [
-                _outlineBtn(context.t('admin_users.edit'), kGreen, Icons.edit),
+              Row(children: [
+                InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () => Navigator.pushNamed(context, '/admin/users/edit', arguments: id),
+                  child: _outlineBtn('แก้ไข', kGreen, Icons.edit),
+                ),
                 const SizedBox(width: 8),
-                _outlineBtn(context.t('admin_users.delete'), kRed, Icons.delete_outline),
-              ])),
+                _outlineBtn('ลบ', kRed, Icons.delete_outline),
+              ]),
             ],
           ),
           const SizedBox(height: 16),
@@ -1043,7 +996,7 @@ class _UserCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('username :', style: TextStyle(color: kMuted)),
-              Flexible(child: EditableLabel('user.$id.name', style: const TextStyle(fontWeight: FontWeight.bold))),
+              Flexible(child: Text(userData['name'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold))),
             ],
           ),
           const SizedBox(height: 8),
@@ -1051,7 +1004,7 @@ class _UserCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('Email :', style: TextStyle(color: kMuted)),
-              Flexible(child: EditableLabel('user.$id.email', style: const TextStyle(color: kBlue))),
+              Flexible(child: Text(userData['email'] ?? '', style: const TextStyle(color: kBlue))),
             ],
           ),
         ],
@@ -1077,21 +1030,628 @@ class _UserCard extends StatelessWidget {
 // ───────────────────────── 12. Admin Foods ─────────────────────────
 class AdminFoodsScreen extends StatelessWidget {
   const AdminFoodsScreen({super.key});
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: CleanAppBar(title: context.t('admin_foods.title')),
-        body: ListView(
-          padding: const EdgeInsets.all(24),
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: const CleanAppBar(title: 'จัดการโภชนาการอาหาร'),
+      body: ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          PrimaryButton('เพิ่มข้อมูลโภชนาการอาหาร', () => Navigator.pushNamed(context, '/admin/foods/add')),
+        ],
+      ),
+    );
+  }
+}
+
+// ───────────────────────── 13. Admin Add Food ─────────────────────────
+class AdminAddFoodScreen extends StatefulWidget {
+  const AdminAddFoodScreen({super.key});
+  @override
+  State<AdminAddFoodScreen> createState() => _AdminAddFoodScreenState();
+}
+
+class _AdminAddFoodScreenState extends State<AdminAddFoodScreen> {
+  final _name = TextEditingController();
+  final _energy = TextEditingController();
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _energy.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final name = _name.text.trim();
+    final energy = _energy.text.trim();
+
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('กรุณากรอกชื่ออาหาร'), backgroundColor: kRed),
+      );
+      return;
+    }
+
+    context.content.addFood({
+      'name': name,
+      'energy': energy.isNotEmpty ? energy : '0',
+      'source': 'admin',
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('เพิ่มข้อมูลโภชนาการอาหารสำเร็จ'), backgroundColor: kGreen),
+    );
+    Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'เพิ่มโภชนาการอาหาร',
+                        style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: kInk),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text('กรอกข้อมูลโภชนาการของอาหาร', style: TextStyle(color: kMuted, fontSize: 13)),
+                      const SizedBox(height: 28),
+                      _FoodField(label: 'ชื่ออาหาร', hint: 'กรอกชื่ออาหาร', controller: _name),
+                      _FoodField(label: 'พลังงาน (Calories)', hint: '0', controller: _energy, numeric: true),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 52,
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            side: const BorderSide(color: kBorder, width: 1.5),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('ยกเลิก', style: TextStyle(color: kInk, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Container(
+                        height: 52,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(26),
+                          boxShadow: [
+                            BoxShadow(color: kGreen.withOpacity(0.35), blurRadius: 12, offset: const Offset(0, 4)),
+                          ],
+                        ),
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: kGreen,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+                          ),
+                          onPressed: _save,
+                          child: const Text('บันทึกข้อมูล', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FoodField extends StatelessWidget {
+  final String label;
+  final String hint;
+  final TextEditingController controller;
+  final bool numeric;
+  const _FoodField({required this.label, required this.hint, required this.controller, this.numeric = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: kInk)),
+          const SizedBox(height: 8),
+          Container(
+            height: 52,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: kBorder, width: 1.5),
+              boxShadow: const [BoxShadow(color: Color(0x08000000), blurRadius: 6, offset: Offset(0, 2))],
+            ),
+            child: TextField(
+              controller: controller,
+              keyboardType: numeric ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
+              inputFormatters: numeric ? [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))] : null,
+              style: const TextStyle(fontSize: 14, color: kInk),
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 14),
+                border: InputBorder.none,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ───────────────────────── Date of Birth ─────────────────────────
+const kGreenDark = Color(0xFF0E9F55);
+
+class DobScreen extends StatefulWidget {
+  const DobScreen({super.key});
+  @override
+  State<DobScreen> createState() => _DobScreenState();
+}
+
+class _DobScreenState extends State<DobScreen> {
+  static const _months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ];
+  static const int _minYear = 1900;
+  final int _maxYear = DateTime.now().year;
+
+  int _day = 14;
+  int _month = 3;
+  int _year = 1997;
+
+  late final FixedExtentScrollController _dayCtrl;
+  late final FixedExtentScrollController _monthCtrl;
+  late final FixedExtentScrollController _yearCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _dayCtrl = FixedExtentScrollController(initialItem: _day - 1);
+    _monthCtrl = FixedExtentScrollController(initialItem: _month - 1);
+    _yearCtrl = FixedExtentScrollController(initialItem: _year - _minYear);
+  }
+
+  @override
+  void dispose() {
+    _dayCtrl.dispose();
+    _monthCtrl.dispose();
+    _yearCtrl.dispose();
+    super.dispose();
+  }
+
+  int _daysIn(int year, int month) => DateTime(year, month + 1, 0).day;
+
+  // เมื่อเปลี่ยนเดือน/ปี ให้ปรับวันไม่ให้เกินจำนวนวันจริงของเดือนนั้น
+  void _clampDay() {
+    final max = _daysIn(_year, _month);
+    if (_day > max) {
+      _day = max;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_dayCtrl.hasClients) _dayCtrl.jumpToItem(_day - 1);
+      });
+    }
+  }
+
+  void _next() {
+    final date = DateTime(_year, _month, _day);
+    final now = DateTime.now();
+    if (date.isAfter(DateTime(now.year, now.month, now.day))) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('วันเกิดต้องไม่เป็นวันที่ในอนาคต'), backgroundColor: kRed),
+      );
+      return;
+    }
+    context.content.birthDate = date;
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('วันเกิดของคุณ', style: TextStyle(fontWeight: FontWeight.bold, color: kInk)),
+        content: Text(
+          '$_day ${_months[_month - 1]} $_year',
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: kGreenDark),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.pushNamed(context, '/health');
+            },
+            child: const Text('ตกลง', style: TextStyle(color: kGreen, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, c) {
+            final itemExtent = (c.maxHeight * 0.075).clamp(40.0, 56.0);
+            return Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(24, 48, 24, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'when were you born',
+                          style: TextStyle(fontSize: 30, fontWeight: FontWeight.w800, color: Colors.black),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'This will be used to calibrate your custom nutrition plan.',
+                          style: TextStyle(fontSize: 13, color: kMuted),
+                        ),
+                        const SizedBox(height: 32),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.fromLTRB(12, 18, 12, 14),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF3F4F6),
+                            borderRadius: BorderRadius.circular(28),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Padding(
+                                padding: EdgeInsets.only(left: 8, bottom: 14),
+                                child: Text(
+                                  'Date of birth',
+                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: kInk),
+                                ),
+                              ),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    flex: 2,
+                                    child: _Wheel(
+                                      label: 'DAY',
+                                      count: _daysIn(_year, _month),
+                                      selected: _day - 1,
+                                      controller: _dayCtrl,
+                                      itemExtent: itemExtent,
+                                      textOf: (i) => '${i + 1}',
+                                      onChanged: (i) => setState(() => _day = i + 1),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 3,
+                                    child: _Wheel(
+                                      label: 'MONTH',
+                                      count: 12,
+                                      selected: _month - 1,
+                                      controller: _monthCtrl,
+                                      itemExtent: itemExtent,
+                                      fontSize: 14,
+                                      textOf: (i) => _months[i],
+                                      onChanged: (i) => setState(() {
+                                        _month = i + 1;
+                                        _clampDay();
+                                      }),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 2,
+                                    child: _Wheel(
+                                      label: 'YEAR',
+                                      count: _maxYear - _minYear + 1,
+                                      selected: _year - _minYear,
+                                      controller: _yearCtrl,
+                                      itemExtent: itemExtent,
+                                      textOf: (i) => '${_minYear + i}',
+                                      onChanged: (i) => setState(() {
+                                        _year = _minYear + i;
+                                        _clampDay();
+                                      }),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                  child: Container(
+                    width: double.infinity,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: [
+                        BoxShadow(color: kGreen.withOpacity(0.35), blurRadius: 14, offset: const Offset(0, 5)),
+                      ],
+                    ),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: kGreen,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                      ),
+                      onPressed: _next,
+                      child: const Text(
+                        'NEXT',
+                        style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 1),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _Wheel extends StatelessWidget {
+  final String label;
+  final int count;
+  final int selected;
+  final FixedExtentScrollController controller;
+  final double itemExtent;
+  final double fontSize;
+  final String Function(int) textOf;
+  final ValueChanged<int> onChanged;
+
+  const _Wheel({
+    required this.label,
+    required this.count,
+    required this.selected,
+    required this.controller,
+    required this.itemExtent,
+    required this.textOf,
+    required this.onChanged,
+    this.fontSize = 16,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: kMuted, letterSpacing: 1)),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: itemExtent * 5,
+          child: ListWheelScrollView.useDelegate(
+            controller: controller,
+            itemExtent: itemExtent,
+            physics: const FixedExtentScrollPhysics(),
+            diameterRatio: 100,
+            perspective: 0.0001,
+            onSelectedItemChanged: onChanged,
+            childDelegate: ListWheelChildBuilderDelegate(
+              childCount: count,
+              builder: (context, i) {
+                final sel = i == selected;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: sel ? kGreenBg : Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: sel ? kGreen.withOpacity(0.4) : const Color(0xFFE5E7EB), width: 1),
+                    ),
+                    child: Text(
+                      textOf(i),
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontSize: fontSize,
+                        fontWeight: sel ? FontWeight.w800 : FontWeight.w500,
+                        color: sel ? kGreenDark : kInk,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ───────────────────────── 14. Admin Edit User ─────────────────────────
+class AdminEditUserScreen extends StatefulWidget {
+  const AdminEditUserScreen({super.key});
+  @override
+  State<AdminEditUserScreen> createState() => _AdminEditUserScreenState();
+}
+
+class _AdminEditUserScreenState extends State<AdminEditUserScreen> {
+  TextEditingController? _name;
+  TextEditingController? _email;
+  final TextEditingController _password = TextEditingController();
+  final TextEditingController _resetPassword = TextEditingController();
+  String _id = '';
+  String _role = 'User';
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_name == null) {
+      _id = (ModalRoute.of(context)?.settings.arguments as String?) ?? '';
+      final userData = context.content.users[_id] ?? {};
+      _name = TextEditingController(text: userData['name'] ?? '');
+      _email = TextEditingController(text: userData['email'] ?? '');
+      _role = userData['role'] ?? 'User';
+      _password.text = '12345678';
+    }
+  }
+
+  @override
+  void dispose() {
+    _name?.dispose();
+    _email?.dispose();
+    _password.dispose();
+    _resetPassword.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: const CleanAppBar(title: 'จัดการบัญชีผู้ใช้'),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const CleanTextField(hint: 'Search food...', icon: Icons.search),
-            PrimaryButton(context.t('admin_foods.add'), () {}),
-            const SizedBox(height: 24),
+            Center(
+              child: Column(
+                children: [
+                  Stack(
+                    alignment: Alignment.bottomRight,
+                    children: [
+                      const CircleAvatar(radius: 40, backgroundColor: kBorder, child: Icon(Icons.person, color: kInk, size: 40)),
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                        child: const Icon(Icons.camera_alt, size: 16, color: kMuted),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const Text('Change Profile Photo', style: TextStyle(color: kGreen, fontWeight: FontWeight.bold, fontSize: 12)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+            
+            const Text('ชื่อ - นามสกุล', style: TextStyle(fontWeight: FontWeight.bold, color: kMuted, fontSize: 12)),
+            const SizedBox(height: 8),
+            CleanTextField(hint: 'ชื่อ นามสกุล', controller: _name, suffixIcon: Icons.edit_square),
+            
+            const Text('อีเมล', style: TextStyle(fontWeight: FontWeight.bold, color: kMuted, fontSize: 12)),
+            const SizedBox(height: 8),
+            CleanTextField(hint: 'อีเมล', controller: _email, suffixIcon: Icons.edit_square),
+            
+            const Text('Role', style: TextStyle(fontWeight: FontWeight.bold, color: kMuted, fontSize: 12)),
+            const SizedBox(height: 8),
             Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), border: Border.all(color: kBorder)),
-              child: EditableLabel('admin_foods.placeholder', style: const TextStyle(color: kMuted)),
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: kBorder, width: 1.5),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _role,
+                  isExpanded: true,
+                  icon: const Icon(Icons.keyboard_arrow_down, color: kMuted),
+                  items: ['User', 'Admin'].map((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value, style: const TextStyle(fontSize: 14, color: kInk)),
+                    );
+                  }).toList(),
+                  onChanged: (newValue) {
+                    setState(() {
+                      _role = newValue!;
+                    });
+                  },
+                ),
+              ),
+            ),
+
+            const Text('รหัสผ่าน', style: TextStyle(fontWeight: FontWeight.bold, color: kMuted, fontSize: 12)),
+            const SizedBox(height: 8),
+            CleanTextField(hint: 'รหัสผ่าน', controller: _password, obscure: true),
+
+            const Text('รีเซ็ตรหัสผ่าน', style: TextStyle(fontWeight: FontWeight.bold, color: kMuted, fontSize: 12)),
+            const SizedBox(height: 8),
+            CleanTextField(hint: 'Reset password', controller: _resetPassword),
+            
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      side: const BorderSide(color: kBorder, width: 1.5),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('ยกเลิก', style: TextStyle(color: kMuted, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: kGreen,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    ),
+                    onPressed: () {
+                      context.content.updateUser(_id, {
+                        'name': _name!.text.trim(),
+                        'email': _email!.text.trim(),
+                        'role': _role,
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('บันทึกข้อมูลผู้ใช้สำเร็จ'), backgroundColor: kGreen),
+                      );
+                      Navigator.pop(context);
+                    },
+                    child: const Text('บันทึกข้อมูล', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
-      );
+      ),
+    );
+  }
 }
